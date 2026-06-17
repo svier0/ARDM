@@ -5,4 +5,4 @@ artifacts/
 *.tsbuildinfo
 .env
 *.log
-bun_dev_err*
+bun_dev_*
