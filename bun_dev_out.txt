@@ -1,0 +1,38 @@
+Using config file: electrobun.config.ts
+
+╔══════════════════════════════════════════════════════════════╗
+║  ELECTROBUN DEV --watch                                     ║
+║  Watching 2  directories                                          ║
+╚══════════════════════════════════════════════════════════════╝
+
+  D:\ai\agent\opencode\ARDM\src\bun
+  D:\ai\agent\opencode\ARDM\src\mainview
+Ensured launcher has .exe extension on Windows
+[electrobun dev --watch] Waiting for file changes...
+
+╔══════════════════════════════════════════════════════════════╗
+║  FILE CHANGED: D:\ai\agent\opencode\ARDM\src\bun\index.ts  ║
+║  Rebuilding...                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+Ensured launcher has .exe extension on Windows
+skipping codesign
+skipping notarization
+[electrobun dev --watch] Build succeeded, launching app...
+[LAUNCHER] Loaded identifier: ardm.electrobun.dev, name: ARDM-dev, channel: dev
+[LAUNCHER] Loading app code from flat files
+Server started at http://localhost:50000
+[Thu Jun 18 00:26:08 2026] setJSUtils called but using map-based approach instead of callbacks
+[Thu Jun 18 00:26:08 2026] Custom class failed, falling back to STATIC class
+ARDM main process started
+WebView2: Download handler registered successfully
+[WebView2] NavigationStarting fired for webview 1
+[Thu Jun 18 00:26:09 2026] DEBUG loadViewsFile: Attempting flat file read: D:\ai\agent\opencode\ARDM\build\dev-win-x64\ARDM-dev\bin\..\Resources\app\views\mainview/index.html
+[Thu Jun 18 00:26:09 2026] DEBUG loadViewsFile: Attempting flat file read: D:\ai\agent\opencode\ARDM\build\dev-win-x64\ARDM-dev\bin\..\Resources\app\views\mainview/static/css/vendors~app.fe8bb903be6a97495a9a.css
+[Thu Jun 18 00:26:09 2026] DEBUG loadViewsFile: Attempting flat file read: D:\ai\agent\opencode\ARDM\build\dev-win-x64\ARDM-dev\bin\..\Resources\app\views\mainview/static/css/app.921511db1ef00905df87.css
+[Thu Jun 18 00:26:09 2026] DEBUG loadViewsFile: Attempting flat file read: D:\ai\agent\opencode\ARDM\build\dev-win-x64\ARDM-dev\bin\..\Resources\app\views\mainview/static/js/manifest.f16d6ab8cfff0a2644e4.js
+[Thu Jun 18 00:26:09 2026] DEBUG loadViewsFile: Attempting flat file read: D:\ai\agent\opencode\ARDM\build\dev-win-x64\ARDM-dev\bin\..\Resources\app\views\mainview/static/js/2.90a96e3fd9eb6dad055f.js
+[Thu Jun 18 00:26:10 2026] DEBUG loadViewsFile: Attempting flat file read: D:\ai\agent\opencode\ARDM\build\dev-win-x64\ARDM-dev\bin\..\Resources\app\views\mainview/static/js/0.d1a5784d868b6ef9fdb8.js
+[Thu Jun 18 00:26:10 2026] DEBUG loadViewsFile: Attempting flat file read: D:\ai\agent\opencode\ARDM\build\dev-win-x64\ARDM-dev\bin\..\Resources\app\views\mainview/index.js
+[Thu Jun 18 00:26:10 2026] DEBUG loadViewsFile: Attempting flat file read: D:\ai\agent\opencode\ARDM\build\dev-win-x64\ARDM-dev\bin\..\Resources\app\views\mainview/static/theme/dark/index.css
+[Thu Jun 18 00:26:10 2026] DEBUG loadViewsFile: Attempting flat file read: D:\ai\agent\opencode\ARDM\build\dev-win-x64\ARDM-dev\bin\..\Resources\app\views\mainview/static/theme/dark/fonts/element-icons.woff

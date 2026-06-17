@@ -1,0 +1,34 @@
+<!DOCTYPE html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><link rel=stylesheet type=text/css id=theme-link><title>Another Redis Desktop Manager</title><link href=./static/css/vendors~app.fe8bb903be6a97495a9a.css rel=stylesheet><link href=./static/css/app.921511db1ef00905df87.css rel=stylesheet></head><body><script type=text/javascript>// Stub for non-Electron environment (Electrobun WebView2)
+      const ipcRenderer = {
+        invoke: async () => {
+          return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        },
+        on: () => {},
+        send: () => {},
+      };
+
+      function changeCSS(theme = 'light') {
+        const themeHref = `static/theme/${theme}/index.css`;
+        document.getElementById('theme-link').href = themeHref;
+        theme == 'dark' ? document.body.classList.add('dark-mode') :
+                          document.body.classList.remove('dark-mode');
+      }
+
+      function globalChangeTheme(theme) {
+        // TEMP: no main process IPC yet - just toggle CSS
+        changeCSS(theme === 'dark' ? 'dark' : 'light');
+      }
+
+      // theme init at startup
+      (() => {
+        let theme = localStorage.theme;
+        if (!['system', 'light', 'dark'].includes(theme)) {
+          theme = 'system';
+        }
+        if (theme == 'system') {
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          changeCSS(prefersDark ? 'dark' : 'light');
+        } else {
+          changeCSS(theme);
+        }
+      })();</script><div id=app></div><script src=./static/js/manifest.f16d6ab8cfff0a2644e4.js></script><script src=./static/js/2.90a96e3fd9eb6dad055f.js></script><script src=./static/js/0.d1a5784d868b6ef9fdb8.js></script><script src="views://mainview/index.js"></script></body></html>
