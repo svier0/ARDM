@@ -6,3 +6,5 @@ artifacts/
 .env
 *.log
 bun_dev_*
+
+scripts/
