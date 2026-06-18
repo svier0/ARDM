@@ -1,4 +1,4 @@
-import Electrobun, { ApplicationMenu, BrowserView, BrowserWindow, Updater, type RPCSchema } from "electrobun/bun";
+import Electrobun, { BrowserView, BrowserWindow, Updater, ApplicationMenu, type RPCSchema } from "electrobun/bun";
 import Redis from "ioredis";
 import { createTunnel } from "tunnel-ssh";
 import * as fs from "fs";
@@ -980,6 +980,52 @@ const windowState = new WindowStateManager(WINDOW_STATE_FILE, {
 const hasPosition =
   windowState.state.x !== undefined && windowState.state.y !== undefined;
 
+ApplicationMenu.setApplicationMenu([
+  {
+    label: "File",
+    submenu: [
+      { label: "New Connection", accelerator: "n", action: "new-connection" },
+      { label: "Import Config", action: "import-config" },
+      { label: "Export Config", action: "export-config" },
+      { type: "separator" },
+      { role: "close" },
+    ],
+  },
+  {
+    label: "Edit",
+    submenu: [
+      { role: "undo" },
+      { role: "redo" },
+      { type: "separator" },
+      { role: "cut" },
+      { role: "copy" },
+      { role: "paste" },
+      { role: "selectAll" },
+    ],
+  },
+  {
+    label: "View",
+    submenu: [
+      { label: "Reload", accelerator: "r", action: "reload" },
+      { label: "Toggle DevTools", accelerator: "i", action: "toggle-devtools" },
+      { type: "separator" },
+      { role: "toggleFullScreen" },
+    ],
+  },
+  {
+    label: "Help",
+    submenu: [
+      { label: "Check for Updates", action: "check-update" },
+      { type: "separator" },
+      { label: "About", action: "about" },
+    ],
+  },
+]);
+
+Electrobun.events.on("application-menu-clicked", (e) => {
+  rpc.send("menu.action", { action: e.data.action });
+});
+
 const win = new BrowserWindow({
   title: "Another Redis Desktop Manager",
   url: "views://mainview/index.html",
@@ -996,18 +1042,6 @@ const win = new BrowserWindow({
 if (windowState.state.maximized) {
   win.maximize();
 }
-
-ApplicationMenu.setApplicationMenu([
-  { submenu: [{ label: "关于 ARDM", action: "about" }, { type: "separator" }, { label: "退出", role: "quit" }] },
-  { label: "文件", submenu: [{ label: "新建连接", action: "new-connection", accelerator: "n" }, { label: "导入配置", action: "import-config" }, { label: "导出配置", action: "export-config" }, { type: "separator" }, { role: "close" }] },
-  { label: "编辑", submenu: [{ role: "undo" }, { role: "redo" }, { type: "separator" }, { role: "cut" }, { role: "copy" }, { role: "paste" }, { role: "selectAll" }] },
-  { label: "视图", submenu: [{ label: "重新加载", action: "reload", accelerator: "r" }, { label: "开发者工具", action: "toggle-devtools", accelerator: "i" }, { type: "separator" }, { role: "toggleFullScreen" }] },
-  { label: "帮助", submenu: [{ label: "检查更新", action: "check-update" }, { type: "separator" }, { label: "关于", action: "about" }] },
-]);
-
-Electrobun.events.on("application-menu-clicked", (e) => {
-  rpc.send("menu.action", { action: e.data.action });
-});
 
 win.on("resize", () => {
   try {
