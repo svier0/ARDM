@@ -18,6 +18,7 @@ export default {
 		copy: {
 			"src/mainview": "views/mainview",
 		},
+
 	},
 	release: {
 		baseUrl:
