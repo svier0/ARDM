@@ -984,33 +984,33 @@ ApplicationMenu.setApplicationMenu([
   {
     label: "File",
     submenu: [
-      { role: "quit" },
+      { role: "quit", label: "Exit" },
     ],
   },
   {
     label: "Edit",
     submenu: [
-      { role: "undo" },
-      { role: "redo" },
+      { role: "undo", accelerator: "CmdOrCtrl+Z" },
+      { role: "redo", accelerator: "Ctrl+Y" },
       { type: "separator" },
-      { role: "cut" },
-      { role: "copy" },
-      { role: "paste" },
+      { role: "cut", accelerator: "CmdOrCtrl+X" },
+      { role: "copy", accelerator: "CmdOrCtrl+C" },
+      { role: "paste", accelerator: "CmdOrCtrl+V" },
       { role: "delete" },
       { type: "separator" },
-      { role: "selectAll" },
+      { role: "selectAll", accelerator: "CmdOrCtrl+A" },
     ],
   },
   {
     label: "View",
     submenu: [
-      { role: "reload" },
-      { role: "forceReload" },
-      { role: "toggleDevTools" },
+      { label: "Reload", action: "view:reload", accelerator: "CmdOrCtrl+R" },
+      { label: "Force Reload", action: "view:forceReload", accelerator: "Shift+CmdOrCtrl+R" },
+      { label: "Toggle Developer Tools", action: "view:toggleDevTools", accelerator: "Ctrl+Shift+I" },
       { type: "separator" },
-      { role: "resetZoom" },
-      { role: "zoomIn" },
-      { role: "zoomOut" },
+      { label: "Actual Size", action: "view:resetZoom", accelerator: "CmdOrCtrl+0" },
+      { label: "Zoom In", action: "view:zoomIn", accelerator: "CmdOrCtrl+Plus" },
+      { label: "Zoom Out", action: "view:zoomOut", accelerator: "CmdOrCtrl+-" },
       { type: "separator" },
       { role: "toggleFullScreen" },
     ],
@@ -1018,24 +1018,49 @@ ApplicationMenu.setApplicationMenu([
   {
     label: "Window",
     submenu: [
-      { role: "minimize" },
+      { role: "minimize", accelerator: "CmdOrCtrl+M" },
       { role: "zoom" },
-      { role: "close" },
+      { role: "close", accelerator: "CmdOrCtrl+W" },
     ],
   },
   {
+    label: "Help",
     role: "help",
-    submenu: [
-      {
-        label: "Learn More",
-        action: "learn-more",
-      },
-    ],
+    submenu: [],
   },
 ]);
 
 Electrobun.events.on("application-menu-clicked", (e) => {
-  rpc.send("menu.action", { action: e.data.action });
+  const action = e.data.action;
+  if (action && typeof action === "string" && action.startsWith("view:")) {
+    const view = BrowserView.getAll().find(v => v.windowId === win.id);
+    if (!view) return;
+    switch (action) {
+      case "view:reload":
+        view.loadURL(view.url || "");
+        break;
+      case "view:forceReload": {
+        const url = new URL(view.url || "", "http://localhost");
+        url.searchParams.set("_", Date.now().toString());
+        view.loadURL(url.toString());
+        break;
+      }
+      case "view:toggleDevTools":
+        view.toggleDevTools();
+        break;
+      case "view:resetZoom":
+        view.setPageZoom(1.0);
+        break;
+      case "view:zoomIn":
+        view.setPageZoom(view.getPageZoom() + 0.5);
+        break;
+      case "view:zoomOut":
+        view.setPageZoom(view.getPageZoom() - 0.5);
+        break;
+    }
+  } else {
+    rpc.send("menu.action", { action: e.data.action });
+  }
 });
 
 const win = new BrowserWindow({
