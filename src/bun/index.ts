@@ -984,11 +984,7 @@ ApplicationMenu.setApplicationMenu([
   {
     label: "File",
     submenu: [
-      { label: "New Connection", accelerator: "n", action: "new-connection" },
-      { label: "Import Config", action: "import-config" },
-      { label: "Export Config", action: "export-config" },
-      { type: "separator" },
-      { role: "close" },
+      { role: "quit" },
     ],
   },
   {
@@ -1000,24 +996,40 @@ ApplicationMenu.setApplicationMenu([
       { role: "cut" },
       { role: "copy" },
       { role: "paste" },
+      { role: "delete" },
+      { type: "separator" },
       { role: "selectAll" },
     ],
   },
   {
     label: "View",
     submenu: [
-      { label: "Reload", accelerator: "r", action: "reload" },
-      { label: "Toggle DevTools", accelerator: "i", action: "toggle-devtools" },
+      { role: "reload" },
+      { role: "forceReload" },
+      { role: "toggleDevTools" },
+      { type: "separator" },
+      { role: "resetZoom" },
+      { role: "zoomIn" },
+      { role: "zoomOut" },
       { type: "separator" },
       { role: "toggleFullScreen" },
     ],
   },
   {
-    label: "Help",
+    label: "Window",
     submenu: [
-      { label: "Check for Updates", action: "check-update" },
-      { type: "separator" },
-      { label: "About", action: "about" },
+      { role: "minimize" },
+      { role: "zoom" },
+      { role: "close" },
+    ],
+  },
+  {
+    role: "help",
+    submenu: [
+      {
+        label: "Learn More",
+        action: "learn-more",
+      },
     ],
   },
 ]);
