@@ -53,6 +53,9 @@ const rpc = Electroview.defineRPC<any>({
   },
 });
 
+// Connect the RPC transport (WebSocket or __electrobunBunBridge)
+new Electroview({ rpc });
+
 // ── Event Handler Registry ──
 
 const eventHandlers = new Map<
@@ -323,3 +326,4 @@ if ((window as any).__bunRpcResolve) {
 }
 
 console.log("ARDM view initialized with bunRPC bridge");
+

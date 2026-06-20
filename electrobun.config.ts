@@ -18,7 +18,9 @@ export default {
 		copy: {
 			"src/mainview": "views/mainview",
 		},
-
+		win: {
+			icon: "resources/icons/icon.ico",
+		},
 	},
 	release: {
 		baseUrl:

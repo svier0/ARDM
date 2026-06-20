@@ -1,11 +1,30 @@
-import Electrobun, { BrowserView, BrowserWindow, Updater, ApplicationMenu, type RPCSchema } from "electrobun/bun";
+import Electrobun, { BrowserView, BrowserWindow, Updater, type RPCSchema } from "electrobun/bun";
 import Redis from "ioredis";
 import { createTunnel } from "tunnel-ssh";
 import * as fs from "fs";
 import * as zlib from "zlib";
 import * as path from "path";
 import * as os from "os";
+import { dlopen, FFIType, ptr } from "bun:ffi";
 
+const user32 = dlopen("user32.dll", {
+    SendMessageW: {
+        args: [FFIType.ptr, FFIType.u32, FFIType.u64, FFIType.ptr],
+        returns: FFIType.ptr,
+    },
+    LoadImageW: {
+        args: [FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.i32, FFIType.i32, FFIType.u32],
+        returns: FFIType.ptr,
+    },
+});
+
+const WM_SETICON = 0x0080;
+const ICON_BIG = 1;
+const ICON_SMALL = 0;
+const IMAGE_ICON = 1;
+const LR_LOADFROMFILE = 0x00000010;
+const LR_DEFAULTSIZE = 0x00000040;
+const LR_SHARED = 0x00008000;
 const WINDOW_STATE_FILE = path.join(
   process.env.APPDATA || os.homedir(),
   "ARDM",
@@ -678,6 +697,19 @@ function readFileSync(filePath: string): string | undefined {
   }
 }
 
+function setWindowIcon(hwnd: any, iconPath: string) {
+  console.log(`[Icon] Setting window icon: hwnd=${Boolean(hwnd)}, iconPath=${iconPath}`);
+  const wpath = iconPath + "\0";
+  const buf = Buffer.from(wpath, "ucs2");
+  const hIcon = user32.symbols.LoadImageW(
+    null, ptr(buf), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_SHARED
+  );
+  if (hIcon !== null) {
+    user32.symbols.SendMessageW(hwnd, WM_SETICON, BigInt(ICON_BIG), hIcon);
+    user32.symbols.SendMessageW(hwnd, WM_SETICON, BigInt(ICON_SMALL), hIcon);
+  }
+}
+
 // 鈹€鈹€ Font enumeration 鈹€鈹€
 
 let fontCache: string[] | null = null;
@@ -980,55 +1012,31 @@ const windowState = new WindowStateManager(WINDOW_STATE_FILE, {
 const hasPosition =
   windowState.state.x !== undefined && windowState.state.y !== undefined;
 
-ApplicationMenu.setApplicationMenu([
-  {
-    label: "File",
-    submenu: [
-      { role: "quit", label: "Exit" },
-    ],
+const win = new BrowserWindow({
+  title: "Another Redis Desktop Manager",
+  url: "views://mainview/index.html",
+  frame: {
+    x: hasPosition ? windowState.state.x! : 0,
+    y: hasPosition ? windowState.state.y! : 0,
+    width: windowState.state.width,
+    height: windowState.state.height,
+    center: !hasPosition,
   },
-  {
-    label: "Edit",
-    submenu: [
-      { role: "undo", accelerator: "CmdOrCtrl+Z" },
-      { role: "redo", accelerator: "Ctrl+Y" },
-      { type: "separator" },
-      { role: "cut", accelerator: "CmdOrCtrl+X" },
-      { role: "copy", accelerator: "CmdOrCtrl+C" },
-      { role: "paste", accelerator: "CmdOrCtrl+V" },
-      { role: "delete" },
-      { type: "separator" },
-      { role: "selectAll", accelerator: "CmdOrCtrl+A" },
-    ],
-  },
-  {
-    label: "View",
-    submenu: [
-      { label: "Reload", action: "view:reload", accelerator: "CmdOrCtrl+R" },
-      { label: "Force Reload", action: "view:forceReload", accelerator: "Shift+CmdOrCtrl+R" },
-      { label: "Toggle Developer Tools", action: "view:toggleDevTools", accelerator: "Ctrl+Shift+I" },
-      { type: "separator" },
-      { label: "Actual Size", action: "view:resetZoom", accelerator: "CmdOrCtrl+0" },
-      { label: "Zoom In", action: "view:zoomIn", accelerator: "CmdOrCtrl+Plus" },
-      { label: "Zoom Out", action: "view:zoomOut", accelerator: "CmdOrCtrl+-" },
-      { type: "separator" },
-      { role: "toggleFullScreen" },
-    ],
-  },
-  {
-    label: "Window",
-    submenu: [
-      { role: "minimize", accelerator: "CmdOrCtrl+M" },
-      { role: "zoom" },
-      { role: "close", accelerator: "CmdOrCtrl+W" },
-    ],
-  },
-  {
-    label: "Help",
-    role: "help",
-    submenu: [],
-  },
-]);
+  rpc,
+});
+
+if (windowState.state.maximized) {
+  win.maximize();
+}
+
+const devIcon = path.join(import.meta.dir, "../../resources/icons/icon.ico");
+const prodIcon = path.join(import.meta.dir, "../../app.ico");
+const iconPath = fs.existsSync(devIcon) ? devIcon : prodIcon;
+if (fs.existsSync(iconPath)) {
+    setWindowIcon((win as any).ptr, iconPath);
+}
+
+
 
 Electrobun.events.on("application-menu-clicked", (e) => {
   const action = e.data.action;
@@ -1062,23 +1070,6 @@ Electrobun.events.on("application-menu-clicked", (e) => {
     rpc.send("menu.action", { action: e.data.action });
   }
 });
-
-const win = new BrowserWindow({
-  title: "Another Redis Desktop Manager",
-  url: "views://mainview/index.html",
-  frame: {
-    x: hasPosition ? windowState.state.x! : 0,
-    y: hasPosition ? windowState.state.y! : 0,
-    width: windowState.state.width,
-    height: windowState.state.height,
-    center: !hasPosition,
-  },
-  rpc,
-});
-
-if (windowState.state.maximized) {
-  win.maximize();
-}
 
 win.on("resize", () => {
   try {
