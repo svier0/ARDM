@@ -4,7 +4,7 @@ export default {
 	app: {
 		name: "ARDM",
 		identifier: "ardm.electrobun.dev",
-		version: "1.7.1.1",
+		version: "1.7.1.260621-alpha4",
 	},
 	build: {
 		bun: {

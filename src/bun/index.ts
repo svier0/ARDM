@@ -261,6 +261,18 @@ Redis.Command.setReplyTransformer("hgetall", (result: any) => {
 
 // 鈹€鈹€ Connection Manager 鈹€鈹€
 
+function reviveBuffers(args: any[]): any[] {
+  return args.map((arg) => {
+    if (arg && typeof arg === "object" && arg.type === "Buffer" && Array.isArray(arg.data)) {
+      return Buffer.from(arg.data);
+    }
+    if (Array.isArray(arg)) {
+      return reviveBuffers(arg);
+    }
+    return arg;
+  });
+}
+
 class RedisConnectionManager {
   private connections = new Map<string, ConnectionEntry>();
   private connectionIdCounter = 0;
@@ -296,9 +308,8 @@ class RedisConnectionManager {
       family: 0,
       connectTimeout: 30000,
       retryStrategy: (times: number) => {
-        const maxRetries = 3;
-        if (times >= maxRetries) return false;
-        return Math.min(times * 200, 1000);
+        if (times >= 1) return false;
+        return 1000;
       },
       enableReadyCheck: false,
       connectionName: config.connectionName || null,
@@ -326,8 +337,8 @@ class RedisConnectionManager {
         name: config.sentinelOptions.masterName,
         connectTimeout: 30000,
         retryStrategy: (times: number) => {
-          if (times >= 3) return false;
-          return Math.min(times * 200, 1000);
+          if (times >= 1) return false;
+          return 1000;
         },
         enableReadyCheck: false,
         connectionName: config.connectionName || null,
@@ -358,6 +369,14 @@ class RedisConnectionManager {
 
     client.on("error", (err: Error) => {
       this.sendError(connectionId, err.message);
+      if ((client as any).status === "end" || (client as any).status === "close") {
+        this.disconnect(connectionId);
+      }
+    });
+    client.on("close", () => {
+      if (this.connections.has(connectionId)) {
+        this.disconnect(connectionId);
+      }
     });
 
     return { connectionId };
@@ -403,46 +422,49 @@ class RedisConnectionManager {
     // sentinel via SSH
     if (config.sentinelOptions) {
       const tempClient = new Redis(localConfig);
-      await new Promise<void>((resolve, reject) => {
-        tempClient.on("ready", async () => {
-          try {
-            const reply = await tempClient.call(
-              "sentinel",
-              "get-master-addr-by-name",
-              config.sentinelOptions!.masterName
-            );
-            if (!reply) {
-              reject(
-                new Error(
-                  `Master name "${config.sentinelOptions!.masterName}" not exists!`
-                )
+      try {
+        await new Promise<void>((resolve, reject) => {
+          tempClient.on("ready", async () => {
+            try {
+              const reply = await tempClient.call(
+                "sentinel",
+                "get-master-addr-by-name",
+                config.sentinelOptions!.masterName
               );
-              return;
+              if (!reply) {
+                reject(
+                  new Error(
+                    `Master name "${config.sentinelOptions!.masterName}" not exists!`
+                  )
+                );
+                return;
+              }
+              const tunnels = await this.createClusterSSHTunnels(
+                sshOpts,
+                tunnelOpts,
+                serverOpts,
+                [{ host: reply[0] as string, port: reply[1] as number }]
+              );
+              const sentinelConfig: RedisConfig = {
+                ...config,
+                host: tunnels[0].localHost,
+                port: tunnels[0].localPort,
+                auth: config.sentinelOptions!.nodePassword,
+              };
+              const result = await this.createConnection(sentinelConfig);
+              this.connections.get(result.connectionId)!.sshServer = server;
+              this.connections.get(result.connectionId)!.sshConnection =
+                connection;
+              resolve();
+            } catch (e) {
+              reject(e);
             }
-            const tunnels = await this.createClusterSSHTunnels(
-              sshOpts,
-              tunnelOpts,
-              serverOpts,
-              [{ host: reply[0] as string, port: reply[1] as number }]
-            );
-            const sentinelConfig: RedisConfig = {
-              ...config,
-              host: tunnels[0].localHost,
-              port: tunnels[0].localPort,
-              auth: config.sentinelOptions!.nodePassword,
-            };
-            const result = await this.createConnection(sentinelConfig);
-            this.connections.get(result.connectionId)!.sshServer = server;
-            this.connections.get(result.connectionId)!.sshConnection =
-              connection;
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
+          });
+          tempClient.on("error", reject);
         });
-        tempClient.on("error", reject);
-      });
-      tempClient.quit();
+      } finally {
+        await tempClient.quit();
+      }
       const entry = this.connections.get(
         [...this.connections.keys()].pop()!
       )!;
@@ -452,24 +474,28 @@ class RedisConnectionManager {
     // cluster via SSH
     if (config.cluster) {
       const tempClient = new Redis(localConfig);
-      const nodes = await new Promise<{ host: string; port: number }[]>(
-        (resolve, reject) => {
-          tempClient.on("ready", async () => {
-            try {
-              const reply = (await tempClient.call(
-                "cluster",
-                "nodes"
-              )) as string;
-              const parsed = this.parseClusterNodes(reply);
-              resolve(parsed);
-            } catch (e) {
-              reject(e);
-            }
-          });
-          tempClient.on("error", reject);
-        }
-      );
-      tempClient.quit();
+      let nodes: { host: string; port: number }[];
+      try {
+        nodes = await new Promise<{ host: string; port: number }[]>(
+          (resolve, reject) => {
+            tempClient.on("ready", async () => {
+              try {
+                const reply = (await tempClient.call(
+                  "cluster",
+                  "nodes"
+                )) as string;
+                const parsed = this.parseClusterNodes(reply);
+                resolve(parsed);
+              } catch (e) {
+                reject(e);
+              }
+            });
+            tempClient.on("error", reject);
+          }
+        );
+      } finally {
+        await tempClient.quit();
+      }
 
       const tunnels = await this.createClusterSSHTunnels(
         sshOpts,
@@ -554,9 +580,17 @@ class RedisConnectionManager {
   async disconnect(connectionId: string): Promise<void> {
     const entry = this.connections.get(connectionId);
     if (!entry) return;
+    this.connections.delete(connectionId);
     try {
-      entry.client.quit();
-    } catch {}
+      await Promise.race([
+        entry.client.quit(),
+        new Promise<void>((_, reject) =>
+          setTimeout(() => reject(new Error("quit timeout")), 5000)
+        ),
+      ]);
+    } catch {
+      entry.client.disconnect();
+    }
     if (entry.sshConnection) {
       try {
         entry.sshConnection.end();
@@ -567,7 +601,6 @@ class RedisConnectionManager {
         entry.sshServer.close();
       } catch {}
     }
-    this.connections.delete(connectionId);
   }
 
   async call(
@@ -577,7 +610,7 @@ class RedisConnectionManager {
   ): Promise<any> {
     const entry = this.connections.get(connectionId);
     if (!entry) throw new Error(`Connection ${connectionId} not found`);
-    return entry.client.call(command, args);
+    return entry.client.call(command, ...reviveBuffers(args));
   }
 
   async callBuffer(
@@ -587,7 +620,7 @@ class RedisConnectionManager {
   ): Promise<any> {
     const entry = this.connections.get(connectionId);
     if (!entry) throw new Error(`Connection ${connectionId} not found`);
-    const result = await (entry.client as any).callBuffer(command, ...args);
+    const result = await (entry.client as any).callBuffer(command, ...reviveBuffers(args));
     return result;
   }
 
@@ -862,7 +895,7 @@ const rpc = BrowserView.defineRPC<ARDMRPC>({
               "COUNT",
               count
             );
-            resultCursor = result[0];
+            resultCursor = result[0].toString();
             allKeys = allKeys.concat(result[1]);
           }
           return { cursor: resultCursor, keys: allKeys };
@@ -874,7 +907,7 @@ const rpc = BrowserView.defineRPC<ARDMRPC>({
           "COUNT",
           count
         );
-        return { cursor: result[0], keys: result[1] };
+        return { cursor: result[0].toString(), keys: result[1] };
       },
       "redis.hscan": async ({
         connectionId,
@@ -894,14 +927,14 @@ const rpc = BrowserView.defineRPC<ARDMRPC>({
           "COUNT",
           count
         );
-        return { cursor: result[0], fields: result[1] };
+        return { cursor: result[0].toString(), fields: result[1] };
       },
       "redis.multi": async ({ connectionId, commands }) => {
         const entry = manager.getEntry(connectionId);
         if (!entry) throw new Error(`Connection ${connectionId} not found`);
         const multi = entry.client.multi();
         for (const cmd of commands) {
-          multi.call(cmd.command, cmd.args);
+          multi.call(cmd.command, ...reviveBuffers(cmd.args));
         }
         return multi.exec();
       },
