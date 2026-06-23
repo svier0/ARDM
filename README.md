@@ -1,6 +1,6 @@
 # ARDM - Another Redis Desktop Manager (Electrobun Port)
 
-**版本: 1.7.1.260621-alpha4**
+**版本: 1.7.1.260623-alpha7**
 
 将 [AnotherRedisDesktopManager](https://github.com/qishibo/AnotherRedisDesktopManager) 从 Electron 重构到 [Electrobun](https://docs.electrobunny.ai/electrobun/) 框架。使用系统 WebView2 渲染 Vue 2 前端 UI，Bun 作为后端运行时。
 
@@ -12,10 +12,10 @@
 | Chromium | 内置 ~150MB | 系统自带，不打包 |
 | 主进程 | Electron main process | Bun 运行时 |
 | IPC | ipcRenderer/ipcMain | postMessage RPC |
-| 原生菜单 | Electron Menu API | Electrobun ApplicationMenu API |
+| 原生菜单 | Electron Menu API | 已删除（非原项目功能） |
 | 自动更新 | electron-updater | Electrobun Updater API |
 | 窗口管理 | BrowserWindow | Electrobun BrowserWindow |
-| 打包体积 | ~100MB+ | ~15MB (不含 WebView2) |
+| 打包体积 | ~100MB+ | ~27MB (7z 便携包) |
 | Redis 驱动 | ioredis (Node.js) | ioredis (Bun, 兼容) |
 
 ## 架构
@@ -23,7 +23,7 @@
 ```
 WebView2 (系统 WebView)
   ┌─────────────────────────────────────────────┐
-  │ Vue 2 + Element UI (@vue/compat)            │
+  │ Vue 2 + Element UI                          │
   │ redisClient.js → Proxy → window.__bunRpc    │
   │ electron-stub.js (替换真实 electron 模块)     │
   └──────────┬──────────────────────────────────┘
@@ -58,7 +58,15 @@ bun install
 bun run dev
 ```
 
-> 前端构建需配合原始项目仓库（参见 `scripts/sync-frontend.ps1`），仅修改 Bun 代码时可直接 `bun run dev`。
+> 前端源码已迁移到本地 `frontend/` 目录，webpack 4 原样保留。首次或修改前端后需构建：`cd frontend && bun build/build.js && robocopy frontend/dist src/mainview /E /PURGE`。
+
+## 构建便携包
+
+```bash
+bun run build:portable
+```
+
+自动完成：清理 → electrobun 构建 → 解压 → 重命名 launcher → 嵌入图标 → 清理 → 打包 7z。产物在 `dist/` 目录。
 
 ## 构建状态
 
@@ -68,20 +76,20 @@ bun run dev
 | Redis 连接 (standalone/Sentinel/Cluster) | ✅ |
 | SSH 隧道 | ✅ |
 | TLS 连接 | ✅ |
-| 原生菜单 | ✅ |
 | 更新机制 | ✅ |
 | 窗口状态持久化 | ✅ |
 | 主题同步 | ✅ |
 | CLI 参数 | ✅ |
 | 触摸屏/快捷键 | ✅ |
 | 应用图标 | ✅ |
-| 打包分发 | ⏳ |
+| 打包分发 (7z 便携包) | ✅ |
+| 前端源码本地化 | ✅ |
 
 ## 已知限制
 
 - **无原生文件对话框**: Electrobun 暂不支持，`dialog.showOpenDialog` 返回 `{ canceled: true }`
-- **Monaco Editor zlib viewer**: 部分 Viewer 组件直接 `require('zlib')`，需 RPC 改造
-- **无热更新**: 前端修改需完整 webpack 构建 + 同步（`scripts/sync-frontend.ps1`）
+- **无热更新**: 前端修改需完整 webpack 构建 + 同步
+- **cpu-features 原生模块**: Bun 无法加载 `.node` 模块，已通过 stub 处理
 
 ## 目录结构
 
@@ -89,18 +97,20 @@ bun run dev
 ARDM/
 ├── electrobun.config.ts           # view entrypoint + release 配置
 ├── package.json                   # 依赖: electrobun / ioredis / tunnel-ssh / ssh2
-├── tsconfig.json
 ├── .gitignore
+├── frontend/                      # 前端源码 (Vue 2 + webpack 4 本地构建)
+│   ├── src/                       # Vue 组件/页面
+│   ├── static/                    # 静态资源
+│   ├── build/                     # webpack 4 构建配置
+│   └── config/                    # 构建环境配置
 ├── scripts/
-│   └── sync-frontend.example.ps1  # 同步脚本模板
+│   └── build-portable.ts          # 便携包构建脚本
 ├── src/
 │   ├── bun/
 │   │   └── index.ts               # Bun 主进程 (~960 行, 含 RPC handlers)
-│   └── mainview/                  # 前端资源 (由 sync-frontend.ps1 填充)
+│   └── mainview/                  # 前端构建产物 (由 frontend/dist 同步)
 │       ├── index.html             # webpack 构建产物
 │       ├── index.ts               # view 桥接脚本 (Electroview.defineRPC)
-│       ├── editor.worker.js       # monaco editor worker
-│       ├── json.worker.js         # monaco editor worker
 │       └── static/                # webpack 产物 (js/css/fonts/img/theme)
 └── build/                         # gitignored, Electrobun 构建产物
 ```
