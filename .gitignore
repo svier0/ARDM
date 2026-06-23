@@ -6,3 +6,6 @@ artifacts/
 .env
 *.log
 bun_dev_*
+dev_*
+src/mainview/**
+!src/mainview/index.ts
