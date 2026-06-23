@@ -2,7 +2,7 @@
 
 ## 版本演进历史
 
-### v1.7.1.260623-alpha7 (当前 HEAD, `8246a13`)
+### v1.7.1.260623-alpha7 (当前 HEAD, `56aa691`)
 - ✅ 前端源码从原项目迁移到本地 `frontend/`，webpack 4 原样保留
 - ✅ 清理 package.json 中的 Electron 依赖和脚本
 - ✅ 重建 `scripts/build-portable.ts`：自动解压、launcher→ARDM 重命名、图标嵌入、清理
@@ -12,6 +12,9 @@
 - ✅ 锁定依赖版本（vue 2.6.11、element-ui 2.4.11、vue-i18n 8.7.0 等）
 - ✅ App.vue mounted 中触发一次 resize 事件修复 KeyList 按钮位置异常
 - ✅ RPC transport 通信正常，项目全功能可用
+- ✅ 更新 .agent/ 指南文件消除所有过时记录
+- ✅ .gitignore: `src/mainview/**` + `!src/mainview/index.ts`，停止跟踪构建产物
+- ✅ 更新项目 README.md 至 alpha7 状态
 
 ### v1.7.1.260621-alpha4 (`5b44dfd`)
 - ✅ Phase 1-7 完成，所有已知功能修复
@@ -34,7 +37,8 @@
 - 便携包构建脚本 `scripts/build-portable.ts` 已验证可工作 ✅
 - 布局 resize 初始化已修复 ✅
 - RPC transport 通信正常，项目端到端全功能可用 ✅
-- 已提交并推送到 GitHub (`8174647`) ✅
+- 构建产物已从 git 跟踪移除（.gitignore 规则 `src/mainview/**` + `!src/mainview/index.ts`）✅
+- 已提交并推送到 GitHub (`56aa691`) ✅
 
 ## 注意事项
 - **根会话只派 task + 写 GUIDE**，绝无例外

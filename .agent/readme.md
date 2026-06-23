@@ -91,7 +91,7 @@ WebView2 ──postMessage RPC── Bun 主进程
 
 | 版本 | Commit | 状态 | 说明 |
 |------|--------|------|------|
-| 1.7.1.260623-alpha7 | `8246a13` | ✅ 可用 | 前端迁移本地 + 构建脚本 + 布局修复 |
+| 1.7.1.260623-alpha7 | `56aa691` | ✅ 可用 | 前端迁移本地 + 构建脚本 + 布局修复 + 指南更新 |
 | 1.7.1.260621-alpha4 | `5b44dfd` | ✅ 可用 | Phase 1-7 完成 |
 
 ---
@@ -106,6 +106,7 @@ ARDM/
 │   ├── static/                 # 静态资源
 │   ├── build/                  # webpack 4 配置
 │   └── config/                 # 构建环境配置
+├── package.json                # 依赖配置
 ├── scripts/
 │   └── build-portable.ts       # 便携包构建脚本
 ├── src/
@@ -122,8 +123,9 @@ ARDM/
 ## 本机环境
 
 - **无 Node.js**，仅 bun (>1.18)
-- 系统代理可能变化；`Get-ItemProperty -Path 'HKCU:\...\Internet Settings' -Name ProxyServer` 查询
+- 系统代理: `127.0.0.1:7897`（可能变化；`Get-ItemProperty -Path 'HKCU:\...\Internet Settings' -Name ProxyServer` 查询）
 - GitHub 镜像: `https://ghfast.top/`
+- git 代理: 若 push 失败，执行 `git config --global http.proxy http://127.0.0.1:7897 && git config --global https.proxy http://127.0.0.1:7897`
 - 临时目录: `D:\x\agents\opencode\temp\`（别用项目目录或 C:\Users）
 
 ---
