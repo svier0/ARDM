@@ -1,4 +1,15 @@
-<!DOCTYPE html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><link rel=stylesheet type=text/css id=theme-link><title>Another Redis Desktop Manager</title><link href=./static/css/vendors~app.fd8044d600e2811cd021.css rel=stylesheet><link href=./static/css/app.b536de0b6cec9c5f4c66.css rel=stylesheet></head><body><script type=text/javascript>// Stub for non-Electron environment (Electrobun WebView2)
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" id="theme-link">
+    <title>Another Redis Desktop Manager</title>
+  </head>
+  <body>
+    <!-- this script must be placed here after body -->
+    <script type="text/javascript">
+      // Stub for non-Electron environment (Electrobun WebView2)
       const ipcRenderer = {
         invoke: async () => {
           return window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -31,4 +42,10 @@
         } else {
           changeCSS(theme);
         }
-      })();</script><div id=app></div><script src=./static/js/manifest.76c9cc803874ec1b92f6.js></script><script src=./static/js/2.9c64e0a5b152adef0372.js></script><script src=./static/js/0.6b49b5e986ac0eab97df.js></script><script src="views://mainview/index.js"></script></body></html>
+      })();
+    </script>
+
+    <div id="app"></div>
+    <!-- built files will be auto injected -->
+  </body>
+</html>

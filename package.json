@@ -6,7 +6,8 @@
 	"scripts": {
 		"start": "electrobun dev",
 		"dev": "electrobun dev --watch",
-		"build:canary": "electrobun build --env=canary"
+		"build:canary": "electrobun build --env=canary",
+		"build:portable": "bun run scripts/build-portable.ts"
 	},
 	"dependencies": {
 		"electrobun": "1.18.1",
