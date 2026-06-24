@@ -7,5 +7,6 @@ artifacts/
 *.log
 bun_dev_*
 dev_*
+build-counter.json
 src/mainview/**
 !src/mainview/index.ts

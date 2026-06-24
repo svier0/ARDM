@@ -6,15 +6,16 @@
  *   bun run scripts/build-portable.ts --version "1.7.1.260621-alpha8"
  *
  * 流程:
- *   1. 清理 dist/、build/、artifacts/ 目录
- *   2. electrobun build --env=stable
- *   3. 复制构建产物到 dist/ 下
- *   4. 重命名 launcher.exe → ARDM.exe
- *   5. rcedit 嵌入图标
- *   6. 清理杂文件 (Info.plist 等)
- *   7. 验证文件结构
- *   8. 打包 7z
- *   9. 清理 build/ 和 artifacts/
+ *   1.  清理 dist/、build/、artifacts/ 目录
+ *   2.  重建前端 (bun run build) 并同步到 src/mainview/
+ *   3.  electrobun build --env=stable
+ *   4.  查找并解压构建产物
+ *   5.  重命名 launcher.exe → ARDM.exe
+ *   6.  rcedit 嵌入图标
+ *   7.  清理杂文件 (Info.plist 等)
+ *   8.  验证文件结构
+ *   9.  打包 7z
+ *   10. 清理 build/ 和 artifacts/
  */
 
 import { $ } from "bun";
@@ -80,13 +81,13 @@ function error(msg: string) {
   console.error(`[build-portable] ❌ ${msg}`);
 }
 
-async function run(cmd: string[], opts?: { cwd?: string; quiet?: boolean }) {
+async function run(cmd: string[], opts?: { cwd?: string; quiet?: boolean; okExitCodes?: number[] }) {
   if (!opts?.quiet) log(`$ ${cmd.join(" ")}`);
   const proc = Bun.spawnSync(cmd, {
     cwd: opts?.cwd || ROOT,
     stdio: ["ignore", "pipe", "pipe"],
   });
-  if (proc.exitCode !== 0) {
+  if (proc.exitCode !== 0 && !(opts?.okExitCodes || []).includes(proc.exitCode)) {
     const stderr = new TextDecoder().decode(proc.stderr);
     throw new Error(`Command failed (exit ${proc.exitCode}): ${stderr}`);
   }
@@ -111,12 +112,30 @@ async function main() {
     }
   }
 
-  // ── Step 2: electrobun build ────────────────────────────────────────────
-  log("Step 2: 执行 electrobun build --env=stable");
+  // ── Step 2: 重建前端 ────────────────────────────────────────────────────
+  log("Step 2: 重建前端");
+  await $`bun build/build.js`.cwd(join(ROOT, "frontend"));
+  // 同步到 src/mainview/（/PURGE 会删除目标端多余文件，如 index.ts）
+  await run(["robocopy", join(ROOT, "frontend", "dist"), join(ROOT, "src", "mainview"), "/E", "/PURGE"], { quiet: true, okExitCodes: [0,1,2,3,4,5,6,7] });
+  // 恢复被 /PURGE 误删的 index.ts（如未跟踪则忽略）
+  await run(["git", "checkout", "HEAD", "--", join(ROOT, "src", "mainview", "index.ts")], { quiet: true, okExitCodes: [0,1] });
+  // 确保 index.html 末尾有 bridge 脚本
+  const indexPath = join(ROOT, "src", "mainview", "index.html");
+  let html = await Bun.file(indexPath).text();
+  if (!html.includes('views://mainview/index.js')) {
+    const patched = html.replace('</body>', '<script src="views://mainview/index.js"></script></body>');
+    if (patched === html) throw new Error("bridge 脚本注入失败：未找到 </body> 标签");
+    await Bun.write(indexPath, patched);
+    log("  ✅ bridge 脚本已注入 index.html");
+  }
+  log("  ✅ 前端重建完成");
+
+  // ── Step 3: electrobun build ────────────────────────────────────────────
+  log("Step 3: 执行 electrobun build --env=stable");
   await run(["bun", "x", "electrobun", "build", "--env=stable"]);
 
-  // ── Step 3: 查找并解压构建产物 ───────────────────────────────────────────
-  log("Step 3: 查找构建产物");
+  // ── Step 4: 查找并解压构建产物 ───────────────────────────────────────────
+  log("Step 4: 查找构建产物");
 
   if (!existsSync(STABLE_DIR)) {
     throw new Error(`构建产物目录不存在: ${STABLE_DIR}`);
@@ -172,8 +191,8 @@ async function main() {
     try { rmSync(innerDir, { recursive: true, force: true }); } catch {}
   }
 
-  // ── Step 4: 重命名 launcher.exe → ARDM.exe ──────────────────────────────
-  log("Step 4: 重命名 launcher.exe → ARDM.exe");
+  // ── Step 5: 重命名 launcher.exe → ARDM.exe ──────────────────────────────
+  log("Step 5: 重命名 launcher.exe → ARDM.exe");
   const binDir = join(destPath, "bin");
   const launcherExe = join(binDir, "launcher.exe");
   const ardmExe = join(binDir, "ARDM.exe");
@@ -189,8 +208,8 @@ async function main() {
     warn("  ❌ 未找到 launcher.exe 或 ARDM.exe");
   }
 
-  // ── Step 5: rcedit 嵌入图标 ─────────────────────────────────────────────
-  log("Step 5: 嵌入图标");
+  // ── Step 6: rcedit 嵌入图标 ─────────────────────────────────────────────
+  log("Step 6: 嵌入图标");
 
   if (existsSync(ardmExe) && existsSync(ICON_PATH)) {
     const rceditPath = join(
@@ -228,8 +247,8 @@ async function main() {
     warn(`ARDM.exe 或图标文件未找到，跳过图标嵌入`);
   }
 
-  // ── Step 6: 清理杂文件 ──────────────────────────────────────────────────
-  log("Step 6: 清理杂文件");
+  // ── Step 7: 清理杂文件 ──────────────────────────────────────────────────
+  log("Step 7: 清理杂文件");
 
   const trashFiles = [
     "Info.plist",
@@ -243,8 +262,8 @@ async function main() {
     }
   }
 
-  // ── Step 7: 验证文件结构 ────────────────────────────────────────────────
-  log("Step 7: 验证文件结构");
+  // ── Step 8: 验证文件结构 ────────────────────────────────────────────────
+  log("Step 8: 验证文件结构");
 
   const requiredFiles = [
     join("bin", "ARDM.exe"),
@@ -261,8 +280,8 @@ async function main() {
     }
   }
 
-  // ── Step 8: 打包 7z ────────────────────────────────────────────────────
-  log(`Step 8: 打包 7z → dist/${destDirName}.7z`);
+  // ── Step 9: 打包 7z ────────────────────────────────────────────────────
+  log(`Step 9: 打包 7z → dist/${destDirName}.7z`);
 
   const archivePath = join(DIST_DIR, `${destDirName}.7z`);
 
@@ -282,8 +301,8 @@ async function main() {
 
   // 注意：不要清理 destPath（dist 下的便携包目录），下次构建 Step 1 会清理
 
-  // ── Step 9: 清理 build/ 和 artifacts/ ──────────────────────────────────
-  log("Step 9: 清理 build/ 和 artifacts/ 目录");
+  // ── Step 10: 清理 build/ 和 artifacts/ ─────────────────────────────────
+  log("Step 10: 清理 build/ 和 artifacts/ 目录");
   for (const dir of [BUILD_DIR, ARTIFACTS_DIR]) {
     if (existsSync(dir)) {
       rmSync(dir, { recursive: true, force: true });
