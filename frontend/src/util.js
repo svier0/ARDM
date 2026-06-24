@@ -181,10 +181,10 @@ export default {
     return false;
   },
   base64Encode(str) {
-    return Buffer.from(str, 'utf8').toString('base64');
+    return btoa(unescape(encodeURIComponent(str)));
   },
   base64Decode(str) {
-    return Buffer.from(str, 'base64').toString('utf8');
+    return decodeURIComponent(escape(atob(str)));
   },
   humanFileSize(size = 0) {
     if (!size) {
