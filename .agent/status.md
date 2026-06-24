@@ -12,6 +12,7 @@
 | Phase 8: 前端迁移 | ✅ 完成 | 前端源码从原项目迁移到本地 frontend/，webpack 4 原样保留 |
 | 便携包构建脚本 | ✅ 完成 | `scripts/build-portable.ts`：launcher→ARDM 重命名、图标嵌入、自动清理 |
 | 布局初始化修复 | ✅ 完成 | App.vue mounted 中触发 resize 事件解决 KeyList 按钮位置异常 |
+| 导入/导出修复 | ✅ 完成 | util.js 中 base64Encode/Decode 用 btoa/atob 替代 Buffer.from，兼容 WebView2 |
 | 整体运行状态 | ✅ 可用 | 项目端到端全功能可运行，RPC 通信正常 |
 
 ---

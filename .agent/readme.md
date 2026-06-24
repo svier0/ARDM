@@ -1,6 +1,6 @@
 # ARDM 开发指南
 
-**版本: 1.7.1.260623-alpha7** | **项目: ARDM (Another Redis Desktop Manager - Electrobun Port)**
+**版本: 1.7.1.260624-alpha1** | **项目: ARDM (Another Redis Desktop Manager - Electrobun Port)**
 
 本文件是 `.agent/` 目录的入口。新会话只需读此文件，即可了解项目全貌及如何恢复上下文。更详细的内容按主题拆分在对应文件中。
 
@@ -81,6 +81,7 @@ WebView2 ──postMessage RPC── Bun 主进程
 | Phase 8: 前端迁移 | ✅ 完成 | 前端源码迁移到本地 frontend/，webpack 4 原样保留 |
 | 便携包构建脚本 | ✅ 完成 | `scripts/build-portable.ts` 自动化 9 步流程 |
 | 布局初始化修复 | ✅ 完成 | mounted 中触发 resize 事件 |
+| 导入/导出修复 | ✅ 完成 | base64Encode/Decode 用 btoa/atob 替代 Buffer.from 兼容 WebView2 |
 | 整体运行状态 | ✅ 可用 | 项目端到端全功能可运行，RPC 通信正常 |
 
 完整记录 → [status.md](status.md)
@@ -91,6 +92,7 @@ WebView2 ──postMessage RPC── Bun 主进程
 
 | 版本 | Commit | 状态 | 说明 |
 |------|--------|------|------|
+| 1.7.1.260624-alpha1 | `f03e47b` | ✅ 可用 | 修复设置导入/导出：btoa/atob 替代 Buffer.from |
 | 1.7.1.260623-alpha7 | `56aa691` | ✅ 可用 | 前端迁移本地 + 构建脚本 + 布局修复 + 指南更新 |
 | 1.7.1.260621-alpha4 | `5b44dfd` | ✅ 可用 | Phase 1-7 完成 |
 

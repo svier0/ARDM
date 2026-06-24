@@ -9,6 +9,7 @@
 
 ## 已修复（当前会话）
 
+19. ✅ **导入/导出功能不可用**: `base64Encode`/`base64Decode` 使用 `Buffer.from()`（WebView2 无 Node.js Buffer），改用浏览器原生 `btoa`/`atob` 解决。
 18. ✅ **布局初始化问题**: 窗口打开后 KeyList 按钮在屏幕外，调整窗口大小后恢复。在 `App.vue` mounted 中触发一次 `window.dispatchEvent(new Event('resize'))` 解决。
 
 ## 已修复（Phase 7）
