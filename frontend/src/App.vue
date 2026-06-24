@@ -89,11 +89,6 @@ export default {
     this.bindSideBarDrag();
     // addon init setup
     addon.setup();
-
-    // 触发一次 resize 事件，强制布局重排（解决初始加载时 KeyList 按钮位置异常的问题）
-    this.$nextTick(() => {
-      window.dispatchEvent(new Event('resize'));
-    });
   },
 };
 </script>

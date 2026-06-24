@@ -1,6 +1,6 @@
 {
 	"name": "ardm",
-	"version": "1.0.0",
+	"version": "1.7.1.260624-alpha22",
 	"type": "module",
 	"description": "Another Redis Desktop Manager - A Redis GUI built with Electrobun",
 	"scripts": {

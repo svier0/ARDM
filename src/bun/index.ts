@@ -1069,7 +1069,32 @@ if (fs.existsSync(iconPath)) {
     setWindowIcon((win as any).ptr, iconPath);
 }
 
-
+// Fix WebView2 viewport: native autoResize initializes WebView2 bounds
+// to the window frame dimensions (including title bar), making 100vh
+// ~30px too large at startup. Sending WM_SIZE triggers the autoResize
+// handler which calls GetClientRect + put_Bounds with correct client area.
+const WM_SIZE = 0x0005;
+const SIZE_RESTORED = 0;
+(function fixViewport() {
+  try {
+    const view = win.webview;
+    if (!view) return;
+    view.on("dom-ready", () => {
+      try {
+        user32.symbols.SendMessageW(
+          (win as any).ptr,
+          WM_SIZE,
+          BigInt(SIZE_RESTORED),
+          BigInt(0),
+        );
+      } catch (e) {
+        console.error("viewport fix WM_SIZE failed:", e);
+      }
+    });
+  } catch (e) {
+    console.error("viewport fix setup failed:", e);
+  }
+})();
 
 Electrobun.events.on("application-menu-clicked", (e) => {
   const action = e.data.action;

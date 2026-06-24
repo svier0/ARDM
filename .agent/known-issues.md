@@ -10,7 +10,9 @@
 ## 已修复（当前会话）
 
 19. ✅ **导入/导出功能不可用**: `base64Encode`/`base64Decode` 使用 `Buffer.from()`（WebView2 无 Node.js Buffer），改用浏览器原生 `btoa`/`atob` 解决。
-18. ✅ **布局初始化问题**: 窗口打开后 KeyList 按钮在屏幕外，调整窗口大小后恢复。在 `App.vue` mounted 中触发一次 `window.dispatchEvent(new Event('resize'))` 解决。
+18. ✅ **布局初始化问题 (已修复)**: 窗口打开后 KeyList 按钮在屏幕外，调整窗口大小后恢复。~~在 `App.vue` mounted 中触发一次 `window.dispatchEvent(new Event('resize'))`~~ 该 workaround 无效（无 resize listener）。
+    - **真实根因**: Electrobun 原生 autoResize 将 WebView2 bounds 初始化为窗口外框尺寸（含标题栏），100vh 偏大 ~30px。
+    - **真实修复**: `src/bun/index.ts` 中 webview `dom-ready` 后通过 `SendMessageW(WM_SIZE)` 触发原生 autoResize handler → `GetClientRect` + `put_Bounds` 修正视口为客户区尺寸。
 
 ## 已修复（Phase 7）
 

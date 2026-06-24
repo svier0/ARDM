@@ -11,7 +11,7 @@
 | Phase 7: 功能修复 | ✅ 完成 | Redis 连接泄漏 + SCAN 修复 + Buffer 序列化 + Font Awesome + RPC thenable 修复 |
 | Phase 8: 前端迁移 | ✅ 完成 | 前端源码从原项目迁移到本地 frontend/，webpack 4 原样保留 |
 | 便携包构建脚本 | ✅ 完成 | `scripts/build-portable.ts`：launcher→ARDM 重命名、图标嵌入、自动清理 |
-| 布局初始化修复 | ✅ 完成 | App.vue mounted 中触发 resize 事件解决 KeyList 按钮位置异常 |
+| 布局初始化修复 | ✅ 完成 | `src/bun/index.ts` 中 SendMessageW(WM_SIZE) 触发原生 autoResize 修正 WebView2 视口（排除标题栏）|
 | 导入/导出修复 | ✅ 完成 | util.js 中 base64Encode/Decode 用 btoa/atob 替代 Buffer.from，兼容 WebView2 |
 | 整体运行状态 | ✅ 可用 | 项目端到端全功能可运行，RPC 通信正常 |
 
@@ -105,7 +105,7 @@
 - 清理 package.json 中的 Electron 依赖和脚本
 - 依赖版本锁定为原项目版本（vue 2.6.11、element-ui 2.4.11 等）
 - 构建产物同步到 `src/mainview/`，保持与 alpha4 一致的结构
-- 添加 `App.vue` mounted 中触发 resize 事件修复布局初始化问题
+- ~~添加 `App.vue` mounted 中触发 resize 事件修复布局初始化问题~~（无效，后以原生 WM_SIZE 方式修复）
 
 **便携包构建脚本**:
 - 重建 `scripts/build-portable.ts`，9 步自动化流程

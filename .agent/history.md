@@ -30,9 +30,15 @@
 - 增加 transport 就绪检测
 - RPC 仍然不通
 
-### v1.7.1.260624-alpha1 (当前 HEAD, `f03e47b`)
+### v1.7.1.260624-alpha1 (`f03e47b`)
 - ✅ 修复设置-连接配置导入/导出：`base64Encode`/`base64Decode` 用 `btoa(unescape(encodeURIComponent(str)))` / `decodeURIComponent(escape(atob(str)))` 替代 `Buffer.from()`，兼容 WebView2 环境
 - ✅ 已提交并推送到 GitHub (`f03e47b`)
+
+### v1.7.1.260624-alpha22 (当前 HEAD)
+- ✅ **修复 WebView2 视口初始化问题**：Electrobun 原生 autoResize 在窗口创建时将 WebView2 bounds 设置为窗口外框尺寸（含标题栏），导致 100vh 比实际客户区高 ~30px，展开连接后底部按钮溢出屏幕。
+- ✅ **根因修复**：在 `src/bun/index.ts` 中，webview `dom-ready` 后通过 `SendMessageW(WM_SIZE)` 触发原生 autoResize handler，其调用 `GetClientRect` + `put_Bounds` 将视口修正为实际客户区尺寸。
+- ✅ **移除旧的无效 workaround**：`App.vue` 中 `dispatchEvent(new Event('resize'))`（无 resize listener，纯 no-op）已清理。
+- ✅ 更新 .agent/ 指南文件至当前版本
 
 ## 下一个会话恢复点
 
